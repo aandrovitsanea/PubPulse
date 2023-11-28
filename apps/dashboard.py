@@ -16,16 +16,8 @@ app = dash.Dash(__name__,
 app.layout = dbc.Container([
     dbc.Row(
         dbc.Col(
-            html.H1('PubPulse: Research Reinforcement Tool',
-                    className='text-center mb-4'),
-            width=12
-        ),
-        justify="center"
-    ),
-    dbc.Row(
-        dbc.Col(
             html.Img(src=app.get_asset_url('logo.png'),
-                     style={'width': '30%',
+                     style={'width': '25%',
                             'height': 'auto',
                             'display': 'block',
                             'margin-left': 'auto',
@@ -34,9 +26,17 @@ app.layout = dbc.Container([
         ),
         justify="center"
     ),
+    dbc.Row(
+        dbc.Col(
+            html.H1('Research Reinforcement Tool',
+                    className='text-center mb-4'),
+            width=12
+        ),
+        justify="center"
+    ),
     dcc.Upload(
         id='upload-data',
-        children=html.Button('Upload PDF File',
+        children=html.Button('Upload PDF Paper',
                              className='btn btn-primary btn-lg',
                              style={'display': 'block',
                                     'margin-left': 'auto',

@@ -1,4 +1,5 @@
-#!/bin/env python
+#!/bin/env python3
+
 import pandas as pd
 
 # Define the function to parse the text
@@ -34,8 +35,9 @@ def parse_txt(text, data_source):
     parsed_df = parse_text(text_content, data_source_name)
     ```
     """
+    import pandas as pd
 
-  # Split text into sections
+    # Split text into sections
     sections = text.split('\n----\n')
 
     # Prepare a DataFrame to store the parsed data
@@ -73,3 +75,55 @@ def parse_txt(text, data_source):
         parsed_data['data_source'].append(data_source)
 
     return pd.DataFrame(parsed_data) # return parsed data as DataFrame
+
+
+def plot_token_distribution(token_counts, title):
+  import matplotlib.pyplot as plt
+  import seaborn as sns
+  sns.set_style("whitegrid")
+  plt.figure(figsize=(15, 6))
+  plt.hist(token_counts, bins=50, color='#3498db', edgecolor='black')
+  plt.title(title, fontsize=16)
+  plt.xlabel("Number of tokens", fontsize=14)
+  plt.ylabel("Number of examples", fontsize=14)
+  plt.xticks(fontsize=12)
+  plt.yticks(fontsize=12)
+  plt.tight_layout()
+  plt.show()
+
+
+
+def deduplicate_dataframe(df: pd.DataFrame, 
+                          model: str, 
+                          threshold: float):
+
+
+    from sentence_transformers import SentenceTransformer
+    import faiss
+    import pandas as pd
+    from tqdm.autonotebook import tqdm
+    import numpy as np
+    sentence_model = SentenceTransformer(model)
+    inputs = df["input"].tolist()
+
+    print("Converting text to embeddings...")
+    embeddings = sentence_model.encode(inputs, show_progress_bar=True)
+    dimension = embeddings.shape[1]
+    index = faiss.IndexFlatIP(dimension)
+    normalized_embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+    index.add(normalized_embeddings)
+
+    print("Filtering out near-duplicates...")
+    D, I = index.search(normalized_embeddings, k=2)
+    to_keep = []
+
+    for i in tqdm(range(len(embeddings)), desc="Filtering"):
+        if D[i, 1] < threshold:
+            to_keep.append(i)
+        else:
+            nearest_neighbor = I[i, 1]
+            if i not in to_keep and nearest_neighbor not in to_keep:
+                to_keep.append(i)
+
+    deduped_df = df.iloc[to_keep].reset_index(drop=True)
+    return deduped_df

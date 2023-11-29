@@ -7,6 +7,25 @@ from tqdm.autonotebook import tqdm
 import pandas as pd
 
 def engine(dataset, model):
+    """
+    The `engine` function is designed to find similar papers within a given dataset
+    based on the textual similarity of their title paragraphs. It leverages the
+    SentenceTransformer model for embedding paragraphs and uses FAISS (Facebook AI
+    Similarity Search) for efficient similarity searches. The function returns a
+    DataFrame with similar papers and corresponding similarity scores.
+
+    Parameters:
+    - dataset (Pandas DataFrame): A DataFrame containing the dataset of papers. It should
+      have columns like 'input', 'type', 'data_source', etc.
+    - model (str): The name of the SentenceTransformer model to be used for embedding the
+      paragraphs.
+
+    Returns:
+    - Pandas DataFrame: A DataFrame containing columns like 'input_paragraph',
+      'input_paper', 'similar_papers', and 'scores'. Each row represents a title paragraph
+      from the dataset and its similar papers with their similarity scores.
+    """
+
     def search_similar_papers(query_paragraph: str, 
                               sentence_model, 
                               faiss_index, 
@@ -51,7 +70,7 @@ def engine(dataset, model):
 
     # Process the dataset and find similar papers with scores for each title paragraph
     def process_dataset_with_scores(dataset, model):
-        # Initialize the sentence model
+        ## Initialize the sentence model
         sentence_model = SentenceTransformer(model)  
 
         embeddings, normalized_embeddings, faiss_index = create_embeddings_and_faiss_index(dataset, 

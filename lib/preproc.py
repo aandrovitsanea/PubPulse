@@ -127,3 +127,17 @@ def deduplicate_dataframe(df: pd.DataFrame,
 
     deduped_df = df.iloc[to_keep].reset_index(drop=True)
     return deduped_df
+
+def make_dataset_from_txt(data_dir):
+    import os
+    import pandas as pd
+    dfs = [] # initiate list of dfs
+    for file_name in os.listdir(data_dir):
+        if file_name.endswith('.txt'):
+            file_path = os.path.join(data_dir,
+                                     file_name)
+            with open(file_path, 'r') as file:
+                content = file.read()
+                dfs.append(parse_txt(content,
+                                file_name))
+    return pd.concat(dfs, ignore_index=True)

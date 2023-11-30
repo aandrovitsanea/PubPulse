@@ -39,6 +39,7 @@ llama-cpp-python==0.2.20
 numpy==1.26.2
 packaging==23.2
 pandas==2.1.3
+pdfminer.six
 Pillow==10.1.0
 protobuf==4.25.1
 pyarrow==14.0.1

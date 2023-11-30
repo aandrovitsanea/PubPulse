@@ -1,6 +1,8 @@
 #!/bin/env python3
 
 import pandas as pd
+from pdfminer.high_level import extract_text
+import sys
 
 # Define the function to parse the text
 def parse_txt(text, data_source):
@@ -141,3 +143,26 @@ def make_dataset_from_txt(data_dir):
                 dfs.append(parse_txt(content,
                                 file_name))
     return pd.concat(dfs, ignore_index=True)
+
+def process_single_file(file_path):
+    import pandas as pd
+    import os
+
+    if file_path.endswith('.txt'):
+        with open(file_path, 'r') as file:
+            content = file.read()
+            return parse_txt(content,
+                             os.path.basename(file_path))
+    else:
+        raise ValueError("File is not a .txt file")
+
+def convert_pdf_to_txt(pdf_path,
+                       txt_path):
+    # Extract text from PDF
+    text = extract_text(pdf_path)
+
+    # Save the text to a .txt file
+    with open(txt_path, 'w') as text_file:
+        text_file.write(text)
+
+    return text

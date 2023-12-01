@@ -179,22 +179,7 @@ Run the test script to assess the functionality of the `generate_similar_papers`
 - **Implementation:**
    - Extract existing abstracts from your documents. These will serve as reference summaries.
    - Use function `generate_summary` from `services/pipeline.py` to generate summary.
-   - Compute **BLEU Score:** Compare n-gram of the generated text with the n-gram of the reference text to calculate a score.
-   ```python
-   from nltk.translate.bleu_score import sentence_bleu
-
-   bleu_score = sentence_bleu([dataset.abstract.split()],
-   generated_summary.split())
-   print(f"BLEU score: {bleu_score}")
-   ```
-   - Compute **ROUGE Score:** Focus on recall (coverage of reference summary by the generated summary).
-   ```python
-   from rouge_score import rouge_scorer
-
-   scorer = rouge_scorer.RougeScorer(['rouge1', 'rougeL'], use_stemmer=True)
-   rouge_score = scorer.score(dataset.abstract, generated_summary)
-   print(f"ROUGE-1 and ROUGE-L: {rouge_score}")
-   ```
+   - `python3 services/evaluation/evaluate_summarization.py`
    - **Evaluation:** High **BLEU** and **ROUGE** scores indicate better quality summaries.
    Compare the scores across various documents to evaluate the consistency of the summarization model.
 

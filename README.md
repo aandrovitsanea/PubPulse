@@ -36,15 +36,27 @@ pip install -r requirements.txt
 ```bash
 ./lib/get_raw_data.sh
 ```
+
+5. Download the model and store it in folder `models`
+```bash
+cd models
+wget https://huggingface.co/TheBloke/Llama-2-7B-GGUF/resolve/main/llama-2-7b.Q2_K.gguf
+
+```
 ### Structure
 
 The project repository is structured as follows:
 
+- `apps/:` Contains application scripts.
 - `data/:` Directory containing the raw and processed data.
-- `models/:` Contains the trained machine learning models.
+- `embedding_storage/:` Stores vectore database and embeddings for inference.
+- `img/:` Images and graphical resources used in the application.
+- `lib/:` Library code for the project, shared across different applications and scripts.
+- `models/:` Contains the pretrained machine learning models.
 - `notebooks/:` Jupyter notebooks with exploratory data analysis and model prototyping.
-- `lib/:` Library code for the project.
-- `app.py:` The main Streamlit application script.
+- `services/:` Services supporting the main application.
+- `dashboard.py:` The main Streamlit application script.
+- `README.md:` Documentation file providing an overview, setup instructions, and additional information about the project.
 - `requirements.txt:` Python dependencies for the project.
 
 ### Usage
@@ -52,9 +64,9 @@ The project repository is structured as follows:
 To run the application, navigate to the project directory and execute the following:
 
 ```bash
-python3 dashboardv2.py
+python3 dashboard.py
 ```
-This will launch the web application, and you can interact with it through your web browser.
+This launches the web application, and you can interact with it through your web browser by uploading a PDF file of the paper in question.
 
 Alternatively you can use each service separately in your console:
 
@@ -98,6 +110,6 @@ combined_summary = pipe.generate_summary("../data/raw-pdf/PMC8198544.pdf")
 To contribute to this project, please create a branch and submit a pull request.
 
 ### Contact
-For any queries regarding the setup or execution of the project, please contact us at anna.androvitsanea@gmail.com.
+For any queries regarding the setup or execution of the project, please contact me at anna.androvitsanea@gmail.com.
 
 

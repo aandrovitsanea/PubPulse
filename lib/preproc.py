@@ -4,6 +4,14 @@ import pandas as pd
 from pdfminer.high_level import extract_text
 import sys
 import re
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sentence_transformers import SentenceTransformer
+import faiss
+import numpy as np
+from tqdm.autonotebook import tqdm
 
 # Define the function to parse the text
 def parse_txt(text, data_source):
@@ -38,7 +46,6 @@ def parse_txt(text, data_source):
     parsed_df = parse_text(text_content, data_source_name)
     ```
     """
-    import pandas as pd
 
     # Split text into sections
     sections = text.split('\n----\n')
@@ -81,41 +88,58 @@ def parse_txt(text, data_source):
 
 
 def plot_token_distribution(token_counts, title):
-  import matplotlib.pyplot as plt
-  import seaborn as sns
-  sns.set_style("whitegrid")
-  plt.figure(figsize=(15, 6))
-  plt.hist(token_counts, bins=50, color='#3498db', edgecolor='black')
-  plt.title(title, fontsize=16)
-  plt.xlabel("Number of tokens", fontsize=14)
-  plt.ylabel("Number of examples", fontsize=14)
-  plt.xticks(fontsize=12)
-  plt.yticks(fontsize=12)
-  plt.tight_layout()
-  plt.show()
+    """
+    Plots the distribution of token counts in a histogram.
+
+    Args:
+    token_counts (list): List of token counts.
+    title (str): Title of the plot.
+    """
+    sns.set_style("whitegrid")
+    plt.figure(figsize=(15, 6))
+    plt.hist(token_counts, bins=50, color='#3498db', edgecolor='black')
+    plt.title(title, fontsize=16)
+    plt.xlabel("Number of tokens", fontsize=14)
+    plt.ylabel("Number of examples", fontsize=14)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.tight_layout()
+    plt.show()
 
 
 
 def deduplicate_dataframe(df: pd.DataFrame, 
                           model: str, 
                           threshold: float):
+    """
+    Deduplicates a DataFrame based on text embeddings similarity.
 
+    Args:
+    df (pd.DataFrame): DataFrame to deduplicate.
+    model (str): Sentence Transformer model for embedding generation.
+    threshold (float): Threshold for cosine similarity to consider duplicates.
 
-    from sentence_transformers import SentenceTransformer
-    import faiss
-    import pandas as pd
-    from tqdm.autonotebook import tqdm
-    import numpy as np
+    Returns:
+    pd.DataFrame: Deduplicated DataFrame.
+    """
+
+    # Load Sentence Transformer model
     sentence_model = SentenceTransformer(model)
     inputs = df["input"].tolist()
 
     print("Converting text to embeddings...")
-    embeddings = sentence_model.encode(inputs, show_progress_bar=True)
+
+    # Convert texts to embeddings
+    embeddings = sentence_model.encode(inputs,
+                                       show_progress_bar=True)
     dimension = embeddings.shape[1]
     index = faiss.IndexFlatIP(dimension)
-    normalized_embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+    normalized_embeddings = embeddings / np.linalg.norm(embeddings,
+                                                        axis=1,
+                                                        keepdims=True)
     index.add(normalized_embeddings)
 
+    # Filtering out near-duplicates
     print("Filtering out near-duplicates...")
     D, I = index.search(normalized_embeddings, k=2)
     to_keep = []
@@ -132,23 +156,43 @@ def deduplicate_dataframe(df: pd.DataFrame,
     return deduped_df
 
 def make_dataset_from_txt(data_dir):
-    import os
-    import pandas as pd
-    dfs = [] # initiate list of dfs
+    """
+    Creates a dataset from text files in a specified directory.
+
+    Args:
+    data_dir (str): Directory containing text files.
+
+    Returns:
+    pd.DataFrame: A DataFrame containing parsed data from all text files.
+    """
+
+    # List to store DataFrames from each file
+    dfs = []
     for file_name in os.listdir(data_dir):
         if file_name.endswith('.txt'):
             file_path = os.path.join(data_dir,
                                      file_name)
             with open(file_path, 'r') as file:
                 content = file.read()
+                # Parse and append DataFrame
                 dfs.append(parse_txt(content,
                                 file_name))
+    # Concatenate all DataFrames
     return pd.concat(dfs, ignore_index=True)
 
 def process_single_file(file_path):
-    import pandas as pd
-    import os
+    """
+    Processes a single text file and returns structured data.
 
+    Args:
+    file_path (str): Path to the text file.
+
+    Returns:
+    pd.DataFrame: A DataFrame containing parsed data from the file.
+    """
+
+
+    # Check if the file is a text file
     if file_path.endswith('.txt'):
         with open(file_path, 'r') as file:
             content = file.read()
@@ -158,6 +202,15 @@ def process_single_file(file_path):
         raise ValueError("File is not a .txt file")
 
 def convert_pdf_to_txt(pdf_path):
+    """
+    Converts a PDF file to text and splits it into paragraphs.
+
+    Args:
+    pdf_path (str): Path to the PDF file.
+
+    Returns:
+    tuple: A tuple containing the extracted text and a DataFrame of paragraphs.
+    """
     # Extract text from PDF
     text = extract_text(pdf_path)
 
@@ -172,44 +225,59 @@ def convert_pdf_to_txt(pdf_path):
 
 def redact_below_author_info(text):
     """
-    Redacts everything below 'AUTHOR INFORMATION', 'ACKNOWLEDGMENTS', or 'REFERENCES'.
+    Removes any text that appears after certain keywords like 'AUTHOR INFORMATION',
+    'ACKNOWLEDGMENTS', or 'REFERENCES'.
+
+    Args:
+    text (str): The text to be redacted.
+
+    Returns:
+    str: The redacted text.
     """
-    # Pattern to find 'AUTHOR INFORMATION' or 'ACKNOWLEDGMENTS' or 'REFERENCES'
+
+    # Define pattern to search for the specified keywords
     pattern = r'(\n\n■ AUTHOR INFORMATION.*|\n\n■ ACKNOWLEDGMENTS.*|\n\n■ REFERENCES.*)'
 
-    # Search for the pattern and get the index where it starts
+    # Find the pattern in the text
     match = re.search(pattern, text, flags=re.DOTALL)
     if match:
-        # Truncate the text from the start of the match
+        # If found, truncate the text from the start of the pattern
         text = text[:match.start()]
 
     return text
 
 def redact_specified_parts(text):
     """
-    Redacts specific sections from academic papers, including:
-    - DOI references
-    - Journal and Society names
-    - Author affiliations and acknowledgments
-    - Specific dates, email addresses
-    - Names, links, numbers, figures, and addresses
+    Redacts specific elements from academic papers, like DOI references, author affiliations,
+    acknowledgments, specific dates, email addresses, names, links, numbers, figures, and addresses.
+
+    Args:
+    text (str): The text to be redacted.
+
+    Returns:
+    str: The redacted text.
     """
-    # Patterns to redact
+
+    # Define patterns for redaction
     patterns_to_redact = [
-        r'Perspective\n\npubs\.acs\.org/JACS\n\n†,‡\n\n§,∥\n\n.*?\n, \n\n', # Specific section with authors and affiliations
-        r'Received:\n\n.*?© XXXX  Society\n\nA\n\n', # "Received" section
-        r'For\n\nB\n\n.*?\n\n\x0cJournal of the  Society\n\n', # Section starting with "For\n\nB\n\n"
-        r'DOI: .*/jacs\.5b09974\nJ\. Am\. Chem\. Soc\. XXXX, XXX, XXX−XXX\n\n\x0cJournal of the  Society\n\n', # DOI and journal info
-        r'AUTHOR INFORMATION\n\n.*?Nat\. Biotechnol\. ,  \(\), \.\n', # Author information section
+         # Author affiliations and acknowledgments
+        r'Perspective\n\npubs\.acs\.org/JACS\n\n†,‡\n\n§,∥\n\n.*?\n, \n\n',
+        # Received section with journal and society names
+        r'Received:\n\n.*?© XXXX  Society\n\nA\n\n',
+        # Other specific sections
+        r'For\n\nB\n\n.*?\n\n\x0cJournal of the  Society\n\n',
+        r'DOI: .*/jacs\.5b09974\nJ\. Am\. Chem\. Soc\. XXXX, XXX, XXX−XXX\n\n\x0cJournal of the  Society\n\n',
+        r'AUTHOR INFORMATION\n\n.*?Nat\. Biotechnol\. ,  \(\), \.\n',
         # Pattern to remove references to papers
         r'DOI: \d+\.\d+/[a-zA-Z0-9.]+\nJ\. Am\. Chem\. Soc\. XXXX, XXX, XXX−XXX\n\n\\x0cJournal of the American Chemical Society\n\nPerspective\n\n',
 
     ]
 
+    # Apply redaction for each pattern
     for pattern in patterns_to_redact:
         text = re.sub(pattern, '', text, flags=re.DOTALL)
 
-        # Remove names
+    # Remove names
     text = re.sub(r'\b[A-Z][a-z]+ [A-Z][a-z]+\b', '', text)
 
     # Remove links
@@ -229,7 +297,20 @@ def redact_specified_parts(text):
 
 # Function to split and filter paragraphs
 def split_and_filter_paragraphs(paragraphs,
-                                max_length=500, min_length=100):
+                                max_length=500,
+                                min_length=100):
+    """
+    Splits and filters paragraphs based on length constraints.
+
+    Args:
+    paragraphs (list): List of paragraphs to be processed.
+    max_length (int, optional): Maximum length for a chunk of text. Defaults to 500.
+    min_length (int, optional): Minimum length to keep a chunk of text. Defaults to 100.
+
+    Returns:
+    list: List of processed paragraphs.
+    """
+
     split_paragraphs = []
     for paragraph in paragraphs:
         # Split paragraph into chunks of approximately max_length characters
@@ -242,8 +323,15 @@ def split_and_filter_paragraphs(paragraphs,
 
 def remove_sentences_not_starting_with_capital(text):
     """
-    Groom the summary by excluding incomplete sentences.
+    Filters out sentences from a text that do not start with a capital letter.
+
+    Args:
+    text (str): Text containing multiple sentences.
+
+    Returns:
+    str: Filtered text with only properly capitalized sentences.
     """
+
     # Split text into sentences using regular expression
     sentences = re.split(r'(?<=[.!?]) +', text)
 

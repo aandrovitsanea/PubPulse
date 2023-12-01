@@ -1,11 +1,21 @@
+#!/bin/env python3
+
 # Import required libraries
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
-import dash_bootstrap_components as dbc  # Import Bootstrap components
+import dash_bootstrap_components as dbc
 import sys
+import os
 sys.path.append("..")
 sys.path.append("../img")
+sys.path.append("../lib")
+sys.path.append("../services")
+sys.path.append("../data")
+import preproc as pre
+import search_service as search
+import summarize as summa
+import pipelines as pipe
 
 # Initialize the Dash app with Bootstrap
 app = dash.Dash(__name__,
@@ -41,73 +51,62 @@ app.layout = dbc.Container([
                              style={'display': 'block',
                                     'margin-left': 'auto',
                                     'margin-right': 'auto'}),
-        multiple=False,  # Allow one file to be uploaded
+        multiple=False,
         className='d-block my-4'
     ),
-    dbc.Row([  # Use Rows and Columns for better layout structure
+    dbc.Row([
         dbc.Col([
-            dcc.Checklist(
-                options=[{'label': '  Give me top 3 most similar papers',
-                          'value': 'TOP3'}],
-                value=[],
-                id='checkbox-top-3',
-                inline=True  # Aligns the checkbox and label on the same line
-            ),
-            dbc.Alert(id='output-top-3',
-                      color="light",
-                      style={'height': '100px'}),
+            html.H3('Top 3 Relevant Papers', className='text-center'),
+            dcc.Loading(
+                id="loading-top-3",
+                children=[dbc.Alert(id='output-top-3', color="light")],
+                type="default",
+            )
         ], width=6),
         dbc.Col([
-            dcc.Checklist(
-                options=[{'label': '  Give me a summary',
-                          'value': 'SUM'}],
-                value=[],
-                id='checkbox-summary',
-                inline=True
-            ),
-            dbc.Alert(id='output-summary',
-                      color="light",
-                      style={'height': '100px'}),
-        ], width=6),
+            html.H3('Summary', className='text-center'),
+            dcc.Loading(
+                id="loading-summary",
+                children=[dbc.Alert(id='output-summary', color="light")],
+                type="default",
+            )
+        ], width=6)
     ])
 ], fluid=True)
 
-
-# Define callback for uploading and processing the PDF
-@app.callback(
-    Output('output-summary', 'children'),
-    Input('upload-data', 'contents'),
-    State('upload-data', 'filename'),
-    Input('checkbox-summary', 'value')
-)
-def process_pdf(contents, filename, summary_requested):
-    if contents is not None:
-        # Process the PDF and generate a summary
-        summary = "This is where the summary will appear."
-        if 'SUM' in summary_requested:
-            return html.Div(summary,
-                            style={'whiteSpace': 'pre-line'})
-        else:
-            return html.Div('Summary not requested.',
-                            style={'whiteSpace': 'pre-line'})
-
-# Define callback for finding similar articles
+# Callback for Top 3 Relevant Papers
 @app.callback(
     Output('output-top-3', 'children'),
     Input('upload-data', 'contents'),
-    State('upload-data', 'filename'),
-    Input('checkbox-top-3', 'value')
+    State('upload-data', 'filename')
 )
 
-def find_similar_articles(contents, filename, top_3_requested):
+def update_top_3(contents, filename):
+    papers_list = html.Div()  # Default empty div
     if contents is not None:
-        # Implement the logic to find similar articles
-        # This could involve machine learning models, database queries, etc.
-        similar_articles = ["Article 1", "Article 2", "Article 3"]
-        if 'TOP3' in top_3_requested:  # Check if 'TOP3' is in the list of values
-            return html.Ul([html.Li(article) for article in similar_articles])
-        else:
-            return html.Div('Top-3 recommendations not requested.')
+        # Assuming the file is saved in '../data/raw-pdf/' with the same filename
+        saved_file_path = f'../data/raw-pdf/{filename}'
+        similar_papers = pipe.generate_similar_papers(saved_file_path, "sentence-transformers/all-MiniLM-L6-v2", top_k=3)
+
+        # Generate the list of similar papers for display
+        papers_list = html.Ul([html.Li(f"{paper['data_source']} (Score: {paper['score']:.2f})") for paper in similar_papers])
+    return html.Div(papers_list, style={'whiteSpace': 'pre-line'})
+
+# Callback for Summary Generation
+@app.callback(
+    Output('output-summary', 'children'),
+    Input('upload-data', 'contents'),
+    State('upload-data', 'filename')
+)
+
+def update_summary(contents, filename):
+    combined_summary = html.Div()  # Default empty div
+    if contents is not None:
+        # Assuming the file is saved in '../data/raw-pdf/' with the same filename
+        saved_file_path = f'../data/raw-pdf/{filename}'
+        summary = pipe.generate_summary(saved_file_path)
+        combined_summary = html.Div(summary, style={'whiteSpace': 'pre-line'})
+    return combined_summary
 
 # Run the app
 if __name__ == '__main__':

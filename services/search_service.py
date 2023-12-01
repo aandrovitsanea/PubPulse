@@ -17,9 +17,10 @@ sys.path.append("../services")
 sys.path.append("../embedding_storage")
 
 # Define constants for storage directory and file names
+STORAGE_DIR = '../embedding_storage'
+
 EMBEDDINGS_FILE = os.path.join(STORAGE_DIR, 'embeddings.npy')
 FAISS_INDEX_FILE = os.path.join(STORAGE_DIR, 'faiss_index.faiss')
-STORAGE_DIR = '../embedding_storage'
 
 # Create storage directory if it doesn't exist
 if not os.path.exists(STORAGE_DIR):
@@ -148,7 +149,7 @@ def search_similar_papers(query_paragraph,
     return similar_papers[['data_source', 'score']].reset_index(drop=True)
 
 def engine(dataset, model):
-     """
+    """
     Analyzes a dataset to find similar papers for each 'TITLE_PARAGRAPH'.
 
     This function first loads or creates embeddings and a FAISS index for the dataset. It then iterates over
@@ -188,6 +189,7 @@ def engine(dataset, model):
             })
     # Return the results as a DataFrame
     return pd.DataFrame(results)
+
 
 def add_new_data_to_index(new_dataset, model_name):
     """

@@ -27,22 +27,26 @@ pip install -r requirements.txt
 ```
 
 3. Clone the repository:
-   ```shell
-   git clone git@github.com:aandrovitsanea/PubPulse.git
-   cd pubpulse
 
-4. Download the training set
+```shell
+git clone git@github.com:aandrovitsanea/PubPulse.git
+cd pubpulse
+   ```
+
+4. Download the training set:
 
 ```bash
 ./lib/get_raw_data.sh
 ```
 
-5. Download the model and store it in folder `models`
+5. Download the model and store it in folder `models`:
+
 ```bash
 cd models
 wget https://huggingface.co/TheBloke/Llama-2-7B-GGUF/resolve/main/llama-2-7b.Q2_K.gguf
 
 ```
+
 ### Structure
 
 The project repository is structured as follows:
@@ -104,6 +108,37 @@ combined_summary = pipe.generate_summary("../data/raw-pdf/PMC8198544.pdf")
 
 ```
 
+### Unit tests
+
+#### TestGenerateSimilarPapers Unit Test
+
+##### Description
+
+This unit test, named `TestGenerateSimilarPapers`, evaluates the functionality of the `generate_similar_papers` function within the `pipelines` module. The test is designed to assess the capability of the function to identify similar papers based on the content of a given PDF file. The test setup includes defining the PDF file path and the Sentence Transformer model name.
+
+##### Test Procedure
+
+1. **Set Up:**
+   - Define the PDF file path and the Sentence Transformer model name.
+   - Initialize necessary variables for the test.
+
+2. **Test Functionality:**
+   - Call the `generate_similar_papers` function with the specified PDF file and model name, requesting the top 3 similar papers.
+   - Verify that the output is a list.
+   - Confirm that the list contains exactly 3 items.
+   - For each item in the list:
+     - Ensure it has a 'data_source' key.
+     - Ensure it has a 'score' key.
+     - Verify that the score is non-negative.
+     - Verify that the score is at most 1.
+
+##### Purpose
+
+This unit test aims to validate the accuracy and reliability of the paper similarity generation process. It provides a comprehensive check on the expected structure of the output, ensuring that each result includes essential information such as data source and similarity score within the defined bounds.
+
+##### Execution
+
+Run the test script to assess the functionality of the `generate_similar_papers` function and confirm its adherence to the expected behavior.
 
 
 ### Contributions

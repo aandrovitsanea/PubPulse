@@ -111,24 +111,29 @@ def find_similar_papers_for_input(input_text, model_name, dataset, top_k=3):
     input_embedding = input_embedding / np.linalg.norm(input_embedding, axis=1, keepdims=True)
 
     # Search for similar papers
-    distances, indices = faiss_index.search(input_embedding.astype(np.float32), top_k + 1)
+    distances, indices = faiss_index.search(input_embedding.astype(np.float32), top_k + 10)  # Search more to ensure distinctness
 
     similar_papers = []
+    unique_data_sources = set()
     found = 0
-    for i in range(top_k + 1):
+    for i in range(indices.shape[1]):
         if found >= top_k:
             break
 
         similar_index = indices[0][i]
-        # Check if the result is not the query itself
-        if similar_index < len(dataset) and dataset.iloc[similar_index]['input'] != input_text:
+        # Check if the result is not the query itself and not a duplicate
+        data_source = dataset.iloc[similar_index]['data_source']
+        if similar_index < len(dataset) and data_source != input_text and data_source not in unique_data_sources:
             similar_paper_info = {
-                "data_source": dataset.iloc[similar_index]['data_source'],
+                "data_source": data_source,
                 "score": distances[0][i]
             }
             similar_papers.append(similar_paper_info)
+            unique_data_sources.add(data_source)
             found += 1
+
     for i, paper in enumerate(similar_papers, 1):
-      print(f"Similar Paper {i}: {paper['data_source']}, Score: {paper['score']}")
+        print(f"Similar Paper {i}: {paper['data_source']}, Score: {paper['score']}")
 
     return similar_papers
+

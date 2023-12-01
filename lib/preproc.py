@@ -3,6 +3,7 @@
 import pandas as pd
 from pdfminer.high_level import extract_text
 import sys
+import re
 
 # Define the function to parse the text
 def parse_txt(text, data_source):
@@ -156,13 +157,98 @@ def process_single_file(file_path):
     else:
         raise ValueError("File is not a .txt file")
 
-def convert_pdf_to_txt(pdf_path,
-                       txt_path):
+def convert_pdf_to_txt(pdf_path):
     # Extract text from PDF
     text = extract_text(pdf_path)
 
-    # Save the text to a .txt file
-    with open(txt_path, 'w') as text_file:
-        text_file.write(text)
+    # Split the text into paragraphs
+    paragraphs = text.split('\n\n')
+    # Create a DataFrame
+    df = pd.DataFrame(paragraphs, columns=['paragraph'])
+
+    return text, df
+
+
+
+def redact_below_author_info(text):
+    """
+    Redacts everything below 'AUTHOR INFORMATION', 'ACKNOWLEDGMENTS', or 'REFERENCES'.
+    """
+    # Pattern to find 'AUTHOR INFORMATION' or 'ACKNOWLEDGMENTS' or 'REFERENCES'
+    pattern = r'(\n\n■ AUTHOR INFORMATION.*|\n\n■ ACKNOWLEDGMENTS.*|\n\n■ REFERENCES.*)'
+
+    # Search for the pattern and get the index where it starts
+    match = re.search(pattern, text, flags=re.DOTALL)
+    if match:
+        # Truncate the text from the start of the match
+        text = text[:match.start()]
 
     return text
+
+def redact_specified_parts(text):
+    """
+    Redacts specific sections from academic papers, including:
+    - DOI references
+    - Journal and Society names
+    - Author affiliations and acknowledgments
+    - Specific dates, email addresses
+    - Names, links, numbers, figures, and addresses
+    """
+    # Patterns to redact
+    patterns_to_redact = [
+        r'Perspective\n\npubs\.acs\.org/JACS\n\n†,‡\n\n§,∥\n\n.*?\n, \n\n', # Specific section with authors and affiliations
+        r'Received:\n\n.*?© XXXX  Society\n\nA\n\n', # "Received" section
+        r'For\n\nB\n\n.*?\n\n\x0cJournal of the  Society\n\n', # Section starting with "For\n\nB\n\n"
+        r'DOI: .*/jacs\.5b09974\nJ\. Am\. Chem\. Soc\. XXXX, XXX, XXX−XXX\n\n\x0cJournal of the  Society\n\n', # DOI and journal info
+        r'AUTHOR INFORMATION\n\n.*?Nat\. Biotechnol\. ,  \(\), \.\n', # Author information section
+        # Pattern to remove references to papers
+        r'DOI: \d+\.\d+/[a-zA-Z0-9.]+\nJ\. Am\. Chem\. Soc\. XXXX, XXX, XXX−XXX\n\n\\x0cJournal of the American Chemical Society\n\nPerspective\n\n',
+
+    ]
+
+    for pattern in patterns_to_redact:
+        text = re.sub(pattern, '', text, flags=re.DOTALL)
+
+        # Remove names
+    text = re.sub(r'\b[A-Z][a-z]+ [A-Z][a-z]+\b', '', text)
+
+    # Remove links
+    text = re.sub(r'https?://\S+|www\.\S+', '', text)
+
+    # Remove numbers
+    text = re.sub(r'\b\d+\b', '', text)
+    text = re.sub(r'\[\d+\]', '', text)
+
+    # Remove figures and addresses
+    text = re.sub(r'Figure \d+', '', text)
+    text = re.sub(r'\d+ [A-Za-z]+ [A-Za-z]+', '', text)
+
+    text = redact_below_author_info(text)
+
+    return text
+
+# Function to split and filter paragraphs
+def split_and_filter_paragraphs(paragraphs,
+                                max_length=500, min_length=100):
+    split_paragraphs = []
+    for paragraph in paragraphs:
+        # Split paragraph into chunks of approximately max_length characters
+        for i in range(0, len(paragraph), max_length):
+            chunk = paragraph[i:i+max_length]
+            # Only add chunks that are at least min_length characters long
+            if len(chunk) >= min_length:
+                split_paragraphs.append(chunk)
+    return split_paragraphs
+
+def remove_sentences_not_starting_with_capital(text):
+    """
+    Groom the summary by excluding incomplete sentences.
+    """
+    # Split text into sentences using regular expression
+    sentences = re.split(r'(?<=[.!?]) +', text)
+
+    # Keep sentences that start with a capital letter
+    filtered_sentences = [sentence for sentence in sentences if sentence[0].isupper()]
+
+    # Join the filtered sentences back into a single string
+    return ' '.join(filtered_sentences)

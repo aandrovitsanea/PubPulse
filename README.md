@@ -177,9 +177,8 @@ Run the test script to assess the functionality of the `generate_similar_papers`
 - **Purpose:** Creates a summary for a given document.
 - **Evaluation:** Compare the generated summaries with human-written summaries (if available) for the same documents. Use metrics like ROUGE or BLEU for a quantitative assessment.
 - **Implementation:**
-   - Extract existing abstracts from your documents. These will serve as reference summaries.
-   - Use function `generate_summary` from `services/pipeline.py` to generate summary.
-   - `python3 services/evaluation/evaluate_summarization.py`
+   - Run [evaluation notebook](notebooks/evaluation.ipynb)
+   - `cd services/evaluation && python3 evaluate_summarization.py`
    - **Evaluation:** High **BLEU** and **ROUGE** scores indicate better quality summaries.
    Compare the scores across various documents to evaluate the consistency of the summarization model.
 

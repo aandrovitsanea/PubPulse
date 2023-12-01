@@ -11,6 +11,9 @@ import search_service as search
 import os
 import pandas as pd
 import re
+from llama_cpp import Llama
+from transformers import AutoTokenizer
+from tqdm import tqdm
 
 def llama_2_7b_q2(processed_paragraphs):
     """
@@ -25,12 +28,6 @@ def llama_2_7b_q2(processed_paragraphs):
     Returns:
         str: A combined summary of all paragraphs.
     """
-
-    # Import necessary modules
-    from llama_cpp import Llama
-    from transformers import AutoTokenizer
-    from tqdm import tqdm
-
 
     # Initialize tokenizer and Llama model
     tokenizer = AutoTokenizer.from_pretrained("NousResearch/Llama-2-7b-hf")
@@ -81,10 +78,6 @@ def llama_2_7b_q2_default(processed_paragraphs):
         str: A combined summary of all paragraphs.
     """
 
-    # Import necessary modules
-    from llama_cpp import Llama
-    from transformers import AutoTokenizer
-    from tqdm import tqdm
     # Initialize tokenizer and Llama model
     tokenizer = AutoTokenizer.from_pretrained("NousResearch/Llama-2-7b-hf")
     llm = Llama(model_path="../models/llama-2-7b.Q2_K.gguf")

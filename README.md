@@ -59,7 +59,7 @@ The project repository is structured as follows:
 - `models/:` Contains the pretrained machine learning models.
 - `notebooks/:` Jupyter notebooks with exploratory data analysis and model prototyping.
 - `services/:` Services supporting the main application.
-- `dashboard.py:` The main Streamlit application script.
+- `dashboard.py:` The main application script in `dash`.
 - `README.md:` Documentation file providing an overview, setup instructions, and additional information about the project.
 - `requirements.txt:` Python dependencies for the project.
 

@@ -56,18 +56,22 @@ app.layout = dbc.Container([
     ),
     dbc.Row([
         dbc.Col([
-            html.H3('Top 3 Relevant Papers', className='text-center'),
+            html.H3('Top 3 Relevant Papers',
+                    className='text-center'),
             dcc.Loading(
                 id="loading-top-3",
-                children=[dbc.Alert(id='output-top-3', color="light")],
+                children=[dbc.Alert(id='output-top-3',
+                                    color="light")],
                 type="default",
             )
         ], width=6),
         dbc.Col([
-            html.H3('Summary', className='text-center'),
+            html.H3('Summary',
+                    className='text-center'),
             dcc.Loading(
                 id="loading-summary",
-                children=[dbc.Alert(id='output-summary', color="light")],
+                children=[dbc.Alert(id='output-summary',
+                                    color="light")],
                 type="default",
             )
         ], width=6)
@@ -86,7 +90,9 @@ def update_top_3(contents, filename):
     if contents is not None:
         # Assuming the file is saved in '../data/raw-pdf/' with the same filename
         saved_file_path = f'../data/raw-pdf/{filename}'
-        similar_papers = pipe.generate_similar_papers(saved_file_path, "sentence-transformers/all-MiniLM-L6-v2", top_k=3)
+        similar_papers = pipe.generate_similar_papers(saved_file_path,
+                                                      "sentence-transformers/all-MiniLM-L6-v2",
+                                                      top_k=3)
 
         # Generate the list of similar papers for display
         papers_list = html.Ul([html.Li(f"{paper['data_source']} (Score: {paper['score']:.2f})") for paper in similar_papers])
@@ -105,7 +111,8 @@ def update_summary(contents, filename):
         # Assuming the file is saved in '../data/raw-pdf/' with the same filename
         saved_file_path = f'../data/raw-pdf/{filename}'
         summary = pipe.generate_summary(saved_file_path)
-        combined_summary = html.Div(summary, style={'whiteSpace': 'pre-line'})
+        combined_summary = html.Div(summary,
+                                    style={'whiteSpace': 'pre-line'})
     return combined_summary
 
 # Run the app

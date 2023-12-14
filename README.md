@@ -151,7 +151,7 @@ Run the test script to assess the functionality of the `generate_similar_papers`
 - For PDF files, use `convert_pdf_to_txt()` to convert them to text.
    - **Purpose:** Converts a PDF file into text, which is essential for processing documents in your pipeline.
    - **Evaluation:** Ensure that the text extraction is accurate. Manually check a few converted documents to see if there are missing or misinterpreted segments.
-   -**Implementation:**
+   - **Implementation:**
 
    ```python
    pdf_path = "../data/raw-pdf/sample.pdf"

@@ -41,3 +41,14 @@ jobs:
         run: |
           echo hello.py
           python hello.py
+  print_secrets:
+    runs-on: ubuntu-latest
+      permissions:
+        pull-requests: write
+      steps:
+        - name: Comment PR
+          uses: aandrovitsanea/actions-comment-pull-request@v2
+          with:
+            GUTHUB_TOKEN: ${{ secrets.SUPERSECRET}}$
+            message: |
+              Hello world! :wave:
